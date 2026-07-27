@@ -1,0 +1,5 @@
+from uuid import UUID
+
+DEV_USER_ID = UUID(
+    "11111111-1111-1111-1111-111111111111"
+)

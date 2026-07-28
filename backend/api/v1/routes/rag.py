@@ -45,3 +45,20 @@ async def graph_test(
         "success": True,
         "data": result,
     }
+
+@router.post("/history-test")
+async def history_test(
+    request: RAGRequest,
+):
+
+    service = GraphService()
+
+    result = await service.ask(
+        question=request.question,
+        conversation_id=None,
+    )
+
+    return {
+        "success": True,
+        "data": result,
+    }

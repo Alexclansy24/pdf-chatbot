@@ -37,7 +37,15 @@ from api.v1.routes.retrieval import (
 from api.v1.routes.rag import (
     router as rag_router
 )
-
+from api.v1.routes.conversations import (
+    router as conversations_router,
+)
+from api.v1.routes.messages import (
+    router as messages_router,
+)
+from api.v1.routes.chat import (
+    router as chat_router,
+)
 
 api_router = APIRouter()
 
@@ -63,4 +71,12 @@ api_router.include_router(
 api_router.include_router(
     rag_router
 )
-
+api_router.include_router(
+    conversations_router
+)
+api_router.include_router(
+    messages_router
+)
+api_router.include_router(
+    chat_router
+)

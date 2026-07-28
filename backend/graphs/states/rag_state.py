@@ -12,3 +12,7 @@ class RAGState(TypedDict):
     retrieved_chunks: int
 
     sources: list[dict]
+
+    conversation_id: str | None
+
+    chat_history: str | None

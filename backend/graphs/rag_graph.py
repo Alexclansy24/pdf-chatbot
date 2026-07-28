@@ -23,6 +23,9 @@ from graphs.nodes.generate import (
 from graphs.nodes.respond import (
     response_node,
 )
+from graphs.nodes.history import (
+    history_node,
+)
 
 
 builder = StateGraph(
@@ -49,8 +52,18 @@ builder.add_node(
     response_node,
 )
 
+builder.add_node(
+    "history",
+    history_node,
+)
+
 builder.add_edge(
     START,
+    "history",
+)
+
+builder.add_edge(
+    "history",
     "retrieve",
 )
 
@@ -73,6 +86,7 @@ builder.add_edge(
     "respond",
     END,
 )
+
 
 rag_graph = (
     builder.compile()

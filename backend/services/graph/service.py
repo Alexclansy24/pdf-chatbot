@@ -8,6 +8,7 @@ class GraphService:
     async def ask(
         self,
         question: str,
+        conversation_id: str | None = None,
     ):
 
         result = await rag_graph.ainvoke(

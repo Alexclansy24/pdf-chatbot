@@ -49,6 +49,9 @@ from api.v1.routes.chat import (
 from api.v1.routes.chat_stream import (
     router as chat_stream_router,
 )
+from api.v1.routes.ingestion import (
+    router as ingestion_router
+)
 
 api_router = APIRouter()
 
@@ -85,4 +88,7 @@ api_router.include_router(
 )
 api_router.include_router(
     chat_stream_router
+)
+api_router.include_router(
+    ingestion_router
 )

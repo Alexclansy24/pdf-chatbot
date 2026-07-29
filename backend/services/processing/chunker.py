@@ -9,8 +9,8 @@ class DocumentChunker:
         self,
         text: str,
         document_id: str,
-        chunk_size: int = 1000,
-        overlap: int = 200,
+        chunk_size: int = 400,
+        overlap: int = 80,
     ) -> list[Chunk]:
 
         if overlap >= chunk_size:

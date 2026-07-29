@@ -45,32 +45,32 @@ class IngestionService:
         for chunk in chunks:
             
 
-            vector = (
+            embedding = (
                 await self.embedding_service
                 .embed_text(
                     chunk.content
             )
         )
 
-        self.vector_repository.upsert(
-            vector=vector,
-            payload={
-                "document_id":
-                    chunk.document_id,
-                "chunk_id":
-                    chunk.chunk_id,
-                "chunk_index":
-                    chunk.chunk_index,
-                "content":
-                    chunk.content,
-            },
-        )
+            self.vector_repository.upsert(
+                vector=embedding,
+                payload={
+                    "document_id":
+                        chunk.document_id,
+                    "chunk_id":
+                        chunk.chunk_id,
+                    "chunk_index":
+                        chunk.chunk_index,
+                    "content":
+                        chunk.content,
+                },
+            )
 
         return {
-        "document_id":
-            document_id,
-        "pages":
-            document.page_count,
-        "chunks":
-            len(chunks),
+            "document_id":
+                document_id,
+            "pages":
+                document.page_count,
+            "chunks":
+                len(chunks),
         }

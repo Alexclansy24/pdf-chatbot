@@ -27,3 +27,23 @@ class GraphService:
         )
 
         return result
+
+    async def stream_answer(
+    self,
+    question: str,
+    conversation_id: str | None = None,
+    ):
+        state = {
+            "question": question,
+            "context": "",
+            "answer": "",
+            "retrieved_chunks": 0,
+            "sources": [],
+            "conversation_id": conversation_id,
+            "chat_history": "",
+        }
+
+        async for event in rag_graph.astream(
+            state
+        ):
+            yield event

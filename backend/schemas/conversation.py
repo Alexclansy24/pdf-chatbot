@@ -1,0 +1,9 @@
+from pydantic import BaseModel
+
+
+class CreateConversationRequest(
+    BaseModel
+):
+    title: str = (
+        "New Conversation"
+    )

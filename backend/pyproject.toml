@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart>=0.0.32",
     "qdrant-client>=1.18.0",
     "sqlalchemy>=2.0.51",
+    "sse-starlette>=3.4.6",
     "structlog>=26.1.0",
     "uvicorn[standard]>=0.51.0",
 ]

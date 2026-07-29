@@ -10,6 +10,10 @@ from services.graph.service import (
 )
 from pydantic import BaseModel
 
+from services.llm.streaming import (
+    stream_text,
+)
+
 router = APIRouter(
     prefix="/chat-stream",
     tags=["Chat Stream"],
@@ -50,3 +54,22 @@ async def stream_chat(
             request.question
         )
     )
+
+@router.get("/tokens")
+async def token_stream(
+    question: str,
+):
+
+    async for token in stream_text(
+        question
+    ):
+
+        yield {
+            "event": "token",
+            "data": token,
+        }
+
+    yield {
+        "event": "done",
+        "data": "complete",
+    }

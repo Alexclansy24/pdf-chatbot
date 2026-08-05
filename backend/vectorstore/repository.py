@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from qdrant_client.models import (
-    Filter,PointStruct, FieldCondition, MatchValue
+    Filter, PointStruct, FieldCondition, MatchValue,
 )
 
 from core.config import settings
@@ -16,7 +16,6 @@ class VectorRepository:
         limit: int = 5,
         document_id: str | None = None,
     ):
-
         query_filter = None
 
         if document_id:
@@ -24,9 +23,7 @@ class VectorRepository:
                 must=[
                     FieldCondition(
                         key="document_id",
-                        match=MatchValue(
-                            value=document_id
-                        )
+                        match=MatchValue(value=document_id)
                     )
                 ]
             )
@@ -43,7 +40,6 @@ class VectorRepository:
         vector: list[float],
         payload: dict,
     ):
-
         point = PointStruct(
             id=str(uuid4()),
             vector=vector,
@@ -53,4 +49,17 @@ class VectorRepository:
         qdrant_client.upsert(
             collection_name=settings.QDRANT_COLLECTION,
             points=[point],
+        )
+
+    def delete_by_document_id(self, document_id: str):
+        qdrant_client.delete(
+            collection_name=settings.QDRANT_COLLECTION,
+            points_selector=Filter(
+                must=[
+                    FieldCondition(
+                        key="document_id",
+                        match=MatchValue(value=document_id)
+                    )
+                ]
+            ),
         )

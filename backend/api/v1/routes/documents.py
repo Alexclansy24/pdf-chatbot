@@ -1,32 +1,67 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from storage.local import LocalStorageProvider
+from vectorstore.repository import VectorRepository
+from services.documents.repository import DocumentRepository
+from services.documents.service import DocumentService
+from uuid import UUID
+from core.config import settings
+from fastapi import APIRouter, HTTPException, Depends
 
-from database.models.document import (
-    Document,
-)
-from database.dependencies import (
-    get_db,
-)
 
-router = APIRouter(
-    prefix="/documents",
-    tags=["Documents"],
-)
 
-@router.get("/")
-async def list_documents(
-    db=Depends(get_db),
-):
+router = APIRouter(prefix="/documents", tags=["Documents"])
 
-    result = await db.execute(
-        select(Document)
+
+def get_document_service() -> DocumentService:
+    return DocumentService(
+        repository=DocumentRepository(),
+        vector_repository=VectorRepository(),
+        storage=LocalStorageProvider(
+            upload_dir=settings.UPLOAD_DIR,
+        ),
     )
 
-    documents = (
-        result.scalars().all()
-    )
+@router.get("")
+async def list_documents():
+    service = get_document_service()
+    documents = await service.list_documents()
+
+    return [
+        {
+            "id": str(doc.id),
+            "filename": doc.filename,
+            "status": doc.status,
+            "page_count": doc.page_count,
+            "chunk_count": doc.chunk_count,
+        }
+        for doc in documents
+    ]
+
+
+@router.get("/{document_id}")
+async def get_document(document_id: UUID):
+    service = get_document_service()
+
+    try:
+        document = await service.get_document(str(document_id))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Document not found")
 
     return {
-        "success": True,
-        "data": documents,
+        "id": str(document.id),
+        "filename": document.filename,
+        "status": document.status,
+        "page_count": document.page_count,
+        "chunk_count": document.chunk_count,
     }
+
+@router.delete("/{document_id}")
+async def delete_document(
+    document_id: UUID,
+    service: DocumentService = Depends(get_document_service),
+):
+    try:
+        await service.delete_document(str(document_id))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return {"success": True, "message": "Document deleted"}

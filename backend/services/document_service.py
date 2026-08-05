@@ -5,7 +5,7 @@ from fastapi import UploadFile
 
 from database.models.document import Document
 from database.models.enums import DocumentStatus
-from repositories.document import DocumentRepository
+from services.documents.repository import DocumentRepository
 from storage.base import StorageProvider
 
 

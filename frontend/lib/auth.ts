@@ -15,3 +15,7 @@ export function removeToken() {
 export function isAuthenticated(): boolean {
   return !!getToken();
 }
+
+export function logout() {
+  removeToken();
+}

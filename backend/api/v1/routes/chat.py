@@ -7,6 +7,10 @@ from schemas.chat import (
 from services.chat.service import (
     ChatService,
 )
+from fastapi import Depends
+
+from database.models.user import User
+from services.auth.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/chat",
@@ -16,6 +20,7 @@ router = APIRouter(
 @router.post("")
 async def chat(
     request: ChatRequest,
+    current_user: User = Depends(get_current_user),
 ):
 
     service = ChatService()

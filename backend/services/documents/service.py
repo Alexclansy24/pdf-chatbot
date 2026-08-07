@@ -13,17 +13,18 @@ class DocumentService:
         self.vector_repository = vector_repository
         self.storage = storage
 
-    async def list_documents(self):
-        return await self.repository.list_documents()
+    async def list_documents(self,user_id: str,):
+        return await self.repository.list_documents(user_id=user_id)
 
-    async def get_document(self, document_id: str):
-        document = await self.repository.get_by_id(document_id)
+
+    async def get_document(self, document_id: str,user_id: str,):
+        document = await self.repository.get_by_id(document_id=document_id,user_id=user_id)
         if document is None:
             raise ValueError(f"Document {document_id} not found")
         return document
 
-    async def delete_document(self, document_id: str):
-        document = await self.repository.get_by_id(document_id)
+    async def delete_document(self, document_id: str,user_id: str,):
+        document = await self.repository.get_by_id(document_id=document_id,user_id=user_id)
         if document is None:
             raise ValueError(f"Document {document_id} not found")
 

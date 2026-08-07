@@ -1,3 +1,6 @@
+from services.auth.dependencies import get_current_user
+from database.models.user import User
+from fastapi import Depends
 from storage.local import LocalStorageProvider
 from core.config import settings
 from pathlib import Path
@@ -14,12 +17,10 @@ router = APIRouter(prefix="/ingestion", tags=["Ingestion"])
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# TODO: replace with real auth once available
-DEV_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 
 @router.post("/pdf")
-async def upload_pdf(file: UploadFile):
+async def upload_pdf(file: UploadFile, current_user: User = Depends(get_current_user)):
 
     storage = LocalStorageProvider(settings.UPLOAD_DIR)
 
@@ -35,7 +36,7 @@ async def upload_pdf(file: UploadFile):
     document = await document_repository.create(
         filename=file.filename,
         storage_path=storage_path,
-        user_id=DEV_USER_ID,
+        user_id=current_user.id,
     )
 
     # 2. Mark as actively processing

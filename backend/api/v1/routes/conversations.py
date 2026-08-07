@@ -1,3 +1,7 @@
+from fastapi import HTTPException
+from services.auth.dependencies import get_current_user
+from fastapi import Depends
+from database.models.user import User
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -23,11 +27,18 @@ async def get_conversation(
         ConversationRepository()
     )
 
+    current_user: User = Depends(get_current_user)
     conversation = (
         await repository.get(
-            conversation_id
+            conversation_id=conversation_id,
+            user_id=current_user.id,
         )
     )
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found",
+        )
 
     return {
         "success": True,
@@ -71,13 +82,11 @@ async def create_conversation(
     )
 
     # Temporary user id
-    user_id = UUID(
-        "00000000-0000-0000-0000-000000000001"
-    )
+    current_user: User = Depends(get_current_user)
 
     conversation = (
         await repository.create(
-            user_id=user_id,
+            user_id=current_user.id,
             title=request.title,
         )
     )
@@ -95,14 +104,12 @@ async def create_conversation(
 
 @router.get("")
 async def list_conversations():
-
+    current_user: User = Depends(get_current_user)
     repository = (
         ConversationRepository()
     )
 
-    user_id = UUID(
-        "00000000-0000-0000-0000-000000000001"
-    )
+    user_id = current_user.id
 
     conversations = (
         await repository.list_by_user(

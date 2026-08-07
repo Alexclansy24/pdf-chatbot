@@ -1,3 +1,5 @@
+from database.models.user import User
+from services.auth.dependencies import get_current_user
 from storage.local import LocalStorageProvider
 from vectorstore.repository import VectorRepository
 from services.documents.repository import DocumentRepository
@@ -21,9 +23,13 @@ def get_document_service() -> DocumentService:
     )
 
 @router.get("")
-async def list_documents():
+async def list_documents(
+    current_user: User = Depends(get_current_user),
+):
     service = get_document_service()
-    documents = await service.list_documents()
+    documents = await service.list_documents(
+        user_id=str(current_user.id),
+    )
 
     return [
         {
@@ -38,11 +44,15 @@ async def list_documents():
 
 
 @router.get("/{document_id}")
-async def get_document(document_id: UUID):
+async def get_document(document_id: UUID, 
+    current_user: User = Depends(get_current_user)):
     service = get_document_service()
 
     try:
-        document = await service.get_document(str(document_id))
+        document = await service.get_document(
+            document_id=str(document_id),
+            user_id=str(current_user.id),
+        )
     except ValueError:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -57,10 +67,14 @@ async def get_document(document_id: UUID):
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: UUID,
+    current_user: User = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
 ):
     try:
-        await service.delete_document(str(document_id))
+        await service.delete_document(
+            document_id=str(document_id),
+            user_id=str(current_user.id),
+        )
     except ValueError:
         raise HTTPException(status_code=404, detail="Document not found")
 

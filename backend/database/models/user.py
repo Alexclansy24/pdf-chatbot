@@ -26,6 +26,11 @@ class User(
         nullable=False,
     )
 
+    hashed_password: Mapped[str] = mapped_column(
+    String(255),
+    nullable=False,
+)
+
     conversations = relationship(
     "Conversation",
     back_populates="user",

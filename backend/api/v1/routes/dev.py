@@ -18,6 +18,7 @@ async def seed_user():
             id="11111111-1111-1111-1111-111111111111",
             email="dev@example.com",
             name="Developer",
+            hashed_password="[PASSWORD]",
         )
 
         db.add(user)

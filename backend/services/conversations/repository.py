@@ -36,14 +36,15 @@ class ConversationRepository:
     async def get(
         self,
         conversation_id: UUID,
+        user_id: UUID,
     ):
 
         async with AsyncSessionLocal() as session:
 
             result = await session.execute(
                 select(Conversation).where(
-                    Conversation.id
-                    == conversation_id
+                    Conversation.id == conversation_id,
+                    Conversation.user_id == user_id,
                 )
             )
 

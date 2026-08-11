@@ -11,3 +11,4 @@ export interface Document {
   page_count: number | null;
   chunk_count: number | null;
 }
+

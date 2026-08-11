@@ -7,3 +7,8 @@ export async function getDocuments(): Promise<Document[]> {
 
   return response.data;
 }
+export async function deleteDocument(
+  documentId: string
+): Promise<void> {
+  await api.delete(`/documents/${documentId}`);
+}

@@ -76,13 +76,14 @@ async def create_test_conversation():
 @router.post("")
 async def create_conversation(
     request: CreateConversationRequest,
+    current_user: User = Depends(get_current_user),
 ):
     repository = (
         ConversationRepository()
     )
 
     # Temporary user id
-    current_user: User = Depends(get_current_user)
+    
 
     conversation = (
         await repository.create(

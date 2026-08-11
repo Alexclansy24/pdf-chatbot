@@ -12,6 +12,9 @@ import RecentDocuments from "@/components/dashboard/recent-documents";
 import { getDocuments } from "@/services/documents";
 import { Document } from "@/types/document";
 import { isAuthenticated } from "@/lib/auth";
+import Upload from "@/components/documents/upload";
+
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -20,13 +23,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.replace("/login");
-      return;
-    }
 
-    async function loadDocuments() {
+  async function loadDocuments() {
       try {
         setLoading(true);
 
@@ -43,7 +41,11 @@ export default function DashboardPage() {
         setLoading(false);
       }
     }
-
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace("/login");
+      return;
+    }
     loadDocuments();
   }, [router]);
 
@@ -99,7 +101,11 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <StatsCards documents={documents} />
 
-            <RecentDocuments documents={documents} />
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Upload onUploaded={loadDocuments} />
+
+              <RecentDocuments documents={documents} />
+            </div>
           </div>
         )}
       </main>

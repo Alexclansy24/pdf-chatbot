@@ -19,6 +19,10 @@ import {
   ChatResponse,
 } from "@/types/chat";
 
+import {
+  createConversation,
+} from "@/services/conversations";
+
 export default function ChatInterface() {
   const [selectedDocument, setSelectedDocument] =
     useState("");
@@ -28,6 +32,14 @@ export default function ChatInterface() {
 
   const [response, setResponse] =
     useState<ChatResponse | null>(null);
+
+  const [conversationId, setConversationId] =
+  useState("");
+
+  const conversationMutation =
+  useMutation({
+    mutationFn: createConversation,
+  });
 
   const {
     data: documents,
@@ -45,30 +57,59 @@ export default function ChatInterface() {
     },
   });
 
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
+  const handleSubmit = async (
+  event: React.FormEvent<HTMLFormElement>
+) => {
+  event.preventDefault();
 
-    if (!selectedDocument) {
-      return;
+  if (!selectedDocument) {
+    return;
+  }
+
+  if (!question.trim()) {
+    return;
+  }
+
+  setResponse(null);
+
+  try {
+    let activeConversationId =
+      conversationId;
+
+    // Create a conversation for the first question
+    if (!activeConversationId) {
+      const conversation =
+        await createConversation(
+          "Document Chat"
+        );
+
+      activeConversationId =
+        conversation.id;
+
+      setConversationId(
+        activeConversationId
+      );
     }
-
-    if (!question.trim()) {
-      return;
-    }
-
-    setResponse(null);
 
     chatMutation.mutate({
       document_id: selectedDocument,
+      conversation_id:
+        activeConversationId,
       question: question.trim(),
     });
-  };
+
+  } catch (error) {
+    console.error(
+      "Failed to create conversation:",
+      error
+    );
+  }
+};
 
   return (
     <div className="space-y-6">
-      {/* Document selector */}
+
+      {/* Document Selector */}
 
       <div className="space-y-2">
         <label
@@ -82,15 +123,15 @@ export default function ChatInterface() {
           id="document"
           value={selectedDocument}
           onChange={(event) =>
-            setSelectedDocument(
-              event.target.value
-            )
+            setSelectedDocument(event.target.value)
           }
           disabled={documentsLoading}
           className="w-full rounded-md border bg-background px-3 py-2"
         >
           <option value="">
-            Select a document
+            {documentsLoading
+              ? "Loading documents..."
+              : "Select a document"}
           </option>
 
           {documents?.map((document) => (
@@ -104,7 +145,7 @@ export default function ChatInterface() {
         </select>
       </div>
 
-      {/* Question form */}
+      {/* Question Form */}
 
       <form
         onSubmit={handleSubmit}
@@ -147,52 +188,75 @@ export default function ChatInterface() {
 
       {chatMutation.isError && (
         <div className="rounded-md border border-red-200 p-4 text-red-600">
-          Failed to get an answer.
+          Failed to get an answer. Please try again.
         </div>
       )}
 
-      {/* Answer */}
+      {/* Response */}
 
-      {response && (
+      {response && response.success && (
         <div className="space-y-6">
+
+          {/* Answer */}
+
           <div className="rounded-lg border p-6">
             <h2 className="mb-3 text-lg font-semibold">
               Answer
             </h2>
 
             <p className="whitespace-pre-wrap text-sm leading-7">
-              {response.answer}
+              {response.data.answer}
+            </p>
+          </div>
+
+          {/* Retrieval Information */}
+
+          <div className="rounded-lg border p-6">
+            <h2 className="mb-4 text-lg font-semibold">
+              Retrieval Information
+            </h2>
+
+            <p className="text-sm text-muted-foreground">
+              Retrieved{" "}
+              <span className="font-medium text-foreground">
+                {response.data.retrieved_chunks}
+              </span>{" "}
+              relevant chunks.
             </p>
           </div>
 
           {/* Sources */}
 
-          {response.sources?.length > 0 && (
+          {response.data.sources?.length > 0 && (
             <div className="rounded-lg border p-6">
               <h2 className="mb-4 text-lg font-semibold">
                 Sources
               </h2>
 
               <div className="space-y-4">
-                {response.sources.map(
-                  (source, index) => (
+                {response.data.sources.map(
+                  (source) => (
                     <div
-                      key={index}
+                      key={source.chunk_id}
                       className="rounded-md bg-muted p-4"
                     >
-                      <div className="mb-2 text-sm font-medium">
-                        Page {source.page}
-                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          Chunk {source.chunk_index}
+                        </span>
 
-                      <p className="text-sm text-muted-foreground">
-                        {source.content}
-                      </p>
+                        <span className="text-xs text-muted-foreground">
+                          Score:{" "}
+                          {source.score.toFixed(3)}
+                        </span>
+                      </div>
                     </div>
                   )
                 )}
               </div>
             </div>
           )}
+
         </div>
       )}
     </div>

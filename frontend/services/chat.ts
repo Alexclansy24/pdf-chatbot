@@ -7,7 +7,7 @@ import {
 export async function askQuestion(
   data: ChatRequest
 ): Promise<ChatResponse> {
-  const response = await api.post(
+  const response = await api.post<ChatResponse>(
     "/chat",
     data
   );

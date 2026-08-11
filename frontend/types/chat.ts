@@ -1,14 +1,25 @@
 export interface ChatRequest {
   document_id: string;
+  conversation_id: string;
   question: string;
 }
-
 export interface ChatSource {
-  page: number;
-  content: string;
+  document_id: string;
+  chunk_id: string;
+  chunk_index: number;
+  score: number;
+}
+
+export interface ChatData {
+  question: string;
+  context: string;
+  answer: string;
+  retrieved_chunks: number;
+  sources: ChatSource[];
+  chat_history: string;
 }
 
 export interface ChatResponse {
-  answer: string;
-  sources: ChatSource[];
+  success: boolean;
+  data: ChatData;
 }

@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getDocuments } from "@/services/documents";
 import { streamQuestion } from "@/services/chat";
+import { createConversation } from "@/services/conversations";
 
 export default function ChatInterface() {
   const [selectedDocument, setSelectedDocument] =
@@ -20,6 +21,9 @@ export default function ChatInterface() {
   const [isStreaming, setIsStreaming] =
     useState(false);
 
+  const [conversationId, setConversationId] =
+  useState<string | null>(null);
+
   const [sources, setSources] = useState<any[]>([]);
   const [error, setError] =
     useState<string | null>(null);
@@ -31,11 +35,26 @@ export default function ChatInterface() {
     queryKey: ["documents"],
     queryFn: getDocuments,
   });
+  
 
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
+    let activeConversationId = conversationId;
+
+    if (!activeConversationId) {
+      try {
+        const conversation = await createConversation("New Conversation");
+        activeConversationId = conversation.id;
+        setConversationId(conversation.id);
+      } catch (error) {
+        console.error("Failed to create conversation:", error);
+        setError("Failed to create conversation.");
+        return;
+      }
+    }
 
     if (!selectedDocument) {
       setError("Please select a document.");
@@ -58,6 +77,7 @@ export default function ChatInterface() {
     try {
   await streamQuestion(
   {
+    conversation_id: activeConversationId,
     document_id: selectedDocument,
     question: question.trim(),
   },

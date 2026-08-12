@@ -5,6 +5,7 @@ const API_URL =
   "http://localhost:8000/api/v1";
 
 interface StreamRequest {
+  conversation_id: string;
   document_id: string;
   question: string;
 }
@@ -38,6 +39,7 @@ export async function streamQuestion(
       },
 
       body: JSON.stringify({
+        conversation_id: request.conversation_id,
         document_id: request.document_id,
         question: request.question,
       }),

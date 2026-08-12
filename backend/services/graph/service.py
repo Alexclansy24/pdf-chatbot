@@ -1,15 +1,18 @@
+from database.models.enums import MessageRole
 import json
 from uuid import UUID
 from graphs.rag_graph import rag_graph
 
 from services.retrieval.service import RetrievalService
 from services.llm.streaming import stream_text
+from services.messages.repository import MessageRepository
 
 
 class GraphService:
 
     def __init__(self):
         self.retriever = RetrievalService()
+        self.messages = MessageRepository()
 
     async def ask(
         self,
@@ -58,8 +61,16 @@ class GraphService:
     self,
     document_id: str,
     question: str,
+    conversation_id: UUID,
     user_id: UUID,
     ):
+        await self.messages.create(
+        conversation_id=conversation_id,
+        role=MessageRole.USER,
+        content=question,
+    )
+        
+
         results = await self.retriever.retrieve(
             query=question,
             limit=5,
@@ -94,12 +105,20 @@ class GraphService:
         context = "\n\n".join(contexts)
 
         if not contexts:
+            answer = (
+            "I could not find relevant "
+            "information in the uploaded document."
+        )
+
+            await self.messages.create(
+            conversation_id=conversation_id,
+            role=MessageRole.ASSISTANT,
+            content=answer,
+            )
+        
             yield {
                 "event": "token",
-                "data": (
-                    "I could not find relevant "
-                    "information in the uploaded document."
-                ),
+                "data": answer,
             }
 
             yield {
@@ -125,11 +144,19 @@ class GraphService:
         {question}
         """
 
+        full_answer = ""
         async for token in stream_text(prompt):
+            full_answer += token
             yield {
                 "type": "token",
                 "data": token,
             }
+
+            await self.messages.create(
+                conversation_id=conversation_id,
+                role=MessageRole.ASSISTANT,
+                content=token,
+            )
 
         yield {
             "type": "sources",

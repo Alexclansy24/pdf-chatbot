@@ -80,6 +80,8 @@ export default function ChatInterface() {
         "SOURCES:",
         sources
       );
+
+      setSources(sources);
     },
 
     onDone: () => {
@@ -240,27 +242,30 @@ export default function ChatInterface() {
         </div>
       )}
       {/* Sources */}
-      {sources.length > 0 && (
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-lg font-semibold">
-            Sources
-          </h2>
+     {sources.length > 0 && (
+  <div className="rounded-lg border p-6">
+    <h2 className="mb-4 text-lg font-semibold">
+      Sources
+    </h2>
 
-        <div className="space-y-3">
+    <div className="space-y-3">
       {sources.map((source, index) => (
         <div
           key={source.chunk_id ?? index}
-          className="rounded-md bg-muted p-4"
+          className="rounded-md border p-4"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">
-              Chunk {source.chunk_index}
-            </span>
+          <p className="text-sm font-medium">
+            Source {index + 1}
+          </p>
 
-            <span className="text-xs text-muted-foreground">
-              Score: {source.score?.toFixed(3)}
-            </span>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Chunk {source.chunk_index}
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            Relevance:{" "}
+            {(source.score * 100).toFixed(1)}%
+          </p>
         </div>
       ))}
     </div>

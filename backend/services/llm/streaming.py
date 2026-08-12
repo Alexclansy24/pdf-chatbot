@@ -12,7 +12,7 @@ async def stream_text(
     response = (
         client.models.generate_content_stream(
             model=
-                "gemini-2.5-flash-lite",
+                "gemini-3.1-flash-lite",
             contents=prompt,
         )
     )

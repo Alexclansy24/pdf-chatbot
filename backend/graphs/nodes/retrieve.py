@@ -17,6 +17,7 @@ async def retrieve_node(
     results = await retriever.retrieve(
         query=state["question"],
         limit=5,
+        document_id=state.get("document_id"),
     )
 
     contexts = []

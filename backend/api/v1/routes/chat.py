@@ -26,13 +26,10 @@ async def chat(
     service = ChatService()
 
     result = await service.ask(
-        conversation_id=
-            request.conversation_id,
-
-        question=
-            request.question,
+        conversation_id=request.conversation_id,
+        document_id=request.document_id,
+        question=request.question,
     )
-
     return {
         "success": True,
         "data": result,

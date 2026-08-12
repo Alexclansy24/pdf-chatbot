@@ -23,7 +23,7 @@ class VectorRepository:
                 must=[
                     FieldCondition(
                         key="document_id",
-                        match=MatchValue(value=document_id)
+                        match=MatchValue(value=str(document_id))
                     )
                 ]
             )
@@ -58,7 +58,7 @@ class VectorRepository:
                 must=[
                     FieldCondition(
                         key="document_id",
-                        match=MatchValue(value=document_id)
+                        match=MatchValue(value=str(document_id))
                     )
                 ]
             ),

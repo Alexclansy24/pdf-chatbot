@@ -1,3 +1,6 @@
+import json
+from fastapi.responses import StreamingResponse
+from uuid import UUID
 from asyncio import sleep
 
 from fastapi import (
@@ -31,6 +34,7 @@ router = APIRouter(
 class StreamRequest(
     BaseModel
 ):
+    document_id: UUID
     question: str
 
 async def graph_stream(
@@ -62,29 +66,59 @@ async def stream_chat(
         )
     )
 
-@router.get("/tokens")
+@router.post("/tokens")
 async def token_stream(
-    question: str,
+    request: StreamRequest,
+    current_user: User = Depends(get_current_user),
 ):
+    service = GraphService()
 
-    async def generate():
+    async def event_generator():
 
-        async for token in stream_text(
-            question
+        async for event in service.stream_pdf_answer(
+            document_id=request.document_id,
+            question=request.question,
+            user_id=current_user.id,
         ):
 
-            yield {
-                "event": "token",
-                "data": token,
-            }
+            event_type = event["type"]
 
+            # -------------------------
+            # TOKEN
+            # -------------------------
 
-        yield {
-            "event": "done",
-            "data": "complete",
-        }
+            if event_type == "token":
 
+                yield (
+                    "event: token\n"
+                    f"data: {json.dumps(event['data'])}\n\n"
+                )
 
-    return EventSourceResponse(
-        generate()
+            # -------------------------
+            # SOURCES
+            # -------------------------
+
+            elif event_type == "sources":
+
+                yield (
+                    "event: sources\n"
+                    f"data: {json.dumps(event['data'])}\n\n"
+                )
+
+        # -------------------------
+        # DONE
+        # -------------------------
+
+        yield (
+            "event: done\n"
+            "data: complete\n\n"
+        )
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
     )

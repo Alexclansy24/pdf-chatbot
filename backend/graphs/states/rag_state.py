@@ -15,4 +15,8 @@ class RAGState(TypedDict):
 
     conversation_id: str | None
 
+    document_id: str | None
+
     chat_history: str | None
+
+    

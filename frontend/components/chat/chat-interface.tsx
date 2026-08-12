@@ -20,6 +20,7 @@ export default function ChatInterface() {
   const [isStreaming, setIsStreaming] =
     useState(false);
 
+  const [sources, setSources] = useState<any[]>([]);
   const [error, setError] =
     useState<string | null>(null);
 
@@ -54,34 +55,64 @@ export default function ChatInterface() {
     setError(null);
     setIsStreaming(true);
 
-    await streamQuestion(
-      question.trim(),
-      {
-        onToken: (token) => {
-          console.log("TOKEN:", token);
+    try {
+  await streamQuestion(
+  {
+    document_id: selectedDocument,
+    question: question.trim(),
+  },
+  {
+    onToken: (token) => {
+      console.log(
+        "TOKEN RECEIVED:",
+        token,
+        typeof token
+      );
 
-          setAnswer((previous) => {
-            return previous + token;
-          });
-        },
+      setAnswer(
+        (previous) =>
+          previous + token
+      );
+    },
 
-        onDone: () => {
-          console.log("STREAM DONE");
+    onSources: (sources) => {
+      console.log(
+        "SOURCES:",
+        sources
+      );
+    },
 
-          setIsStreaming(false);
-        },
+    onDone: () => {
+      console.log(
+        "STREAM DONE"
+      );
 
-        onError: (message) => {
-          console.error(
-            "STREAM ERROR:",
-            message
-          );
+      setIsStreaming(false);
+    },
 
-          setError(message);
-          setIsStreaming(false);
-        },
-      }
-    );
+    onError: (message) => {
+      console.error(
+        "STREAM ERROR:",
+        message
+      );
+
+      setError(message);
+      setIsStreaming(false);
+    },
+  }
+);
+} catch (error) {
+  console.error(
+    "Chat streaming failed:",
+    error
+  );
+
+  setError(
+    "Failed to get an answer."
+  );
+
+  setIsStreaming(false);
+}
   };
 
   return (
@@ -208,6 +239,33 @@ export default function ChatInterface() {
 
         </div>
       )}
+      {/* Sources */}
+      {sources.length > 0 && (
+        <div className="rounded-lg border p-6">
+          <h2 className="mb-4 text-lg font-semibold">
+            Sources
+          </h2>
+
+        <div className="space-y-3">
+      {sources.map((source, index) => (
+        <div
+          key={source.chunk_id ?? index}
+          className="rounded-md bg-muted p-4"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">
+              Chunk {source.chunk_index}
+            </span>
+
+            <span className="text-xs text-muted-foreground">
+              Score: {source.score?.toFixed(3)}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
     </div>
   );

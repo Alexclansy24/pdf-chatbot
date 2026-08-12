@@ -7,7 +7,6 @@ from services.retrieval.service import RetrievalService
 class RAGService:
 
     def __init__(self):
-
         self.retriever = RetrievalService()
 
         self.llm = ChatGoogleGenerativeAI(
@@ -19,47 +18,52 @@ class RAGService:
     async def answer(
         self,
         question: str,
+        document_id: str | None = None,
     ):
-
+        # Retrieve only from the selected document
         results = await self.retriever.retrieve(
             query=question,
             limit=5,
+            document_id=document_id,
         )
 
         contexts = []
 
         for point in results.points:
+            content = point.payload.get("content", "")
 
-            contexts.append(
-                point.payload.get(
-                    "content",
-                    "",
-                )
-            )
+            if content:
+                contexts.append(content)
 
         context = "\n\n".join(contexts)
 
         prompt = f"""
-You are a PDF assistant.
+You are a PDF question-answering assistant.
 
-Answer ONLY using the provided context.
+You MUST answer the question ONLY using the provided PDF context.
 
-If the answer is not found in the context,
-say:
-"I could not find that information in the uploaded documents."
+Do NOT use your general knowledge.
+Do NOT use information from the internet.
+Do NOT invent or assume information.
 
-Context:
+If the answer cannot be found in the provided context, respond exactly with:
+
+"I could not find that information in the uploaded document."
+
+PDF Context:
+----------------
 {context}
+----------------
 
 Question:
 {question}
+
+Answer:
 """
 
-        response = await self.llm.ainvoke(
-            prompt
-        )
+        response = await self.llm.ainvoke(prompt)
 
         return {
             "answer": response.content,
-            "sources": len(contexts),
+            "retrieved_chunks": len(contexts),
         }

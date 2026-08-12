@@ -2,26 +2,10 @@
 
 import { useState } from "react";
 
-import {
-  useMutation,
-  useQuery,
-} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import {
-  getDocuments,
-} from "@/services/documents";
-
-import {
-  askQuestion,
-} from "@/services/chat";
-
-import {
-  ChatResponse,
-} from "@/types/chat";
-
-import {
-  createConversation,
-} from "@/services/conversations";
+import { getDocuments } from "@/services/documents";
+import { streamQuestion } from "@/services/chat";
 
 export default function ChatInterface() {
   const [selectedDocument, setSelectedDocument] =
@@ -30,16 +14,14 @@ export default function ChatInterface() {
   const [question, setQuestion] =
     useState("");
 
-  const [response, setResponse] =
-    useState<ChatResponse | null>(null);
+  const [answer, setAnswer] =
+    useState("");
 
-  const [conversationId, setConversationId] =
-  useState("");
+  const [isStreaming, setIsStreaming] =
+    useState(false);
 
-  const conversationMutation =
-  useMutation({
-    mutationFn: createConversation,
-  });
+  const [error, setError] =
+    useState<string | null>(null);
 
   const {
     data: documents,
@@ -49,62 +31,58 @@ export default function ChatInterface() {
     queryFn: getDocuments,
   });
 
-  const chatMutation = useMutation({
-    mutationFn: askQuestion,
-
-    onSuccess: (data) => {
-      setResponse(data);
-    },
-  });
-
   const handleSubmit = async (
-  event: React.FormEvent<HTMLFormElement>
-) => {
-  event.preventDefault();
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
 
-  if (!selectedDocument) {
-    return;
-  }
-
-  if (!question.trim()) {
-    return;
-  }
-
-  setResponse(null);
-
-  try {
-    let activeConversationId =
-      conversationId;
-
-    // Create a conversation for the first question
-    if (!activeConversationId) {
-      const conversation =
-        await createConversation(
-          "Document Chat"
-        );
-
-      activeConversationId =
-        conversation.id;
-
-      setConversationId(
-        activeConversationId
-      );
+    if (!selectedDocument) {
+      setError("Please select a document.");
+      return;
     }
 
-    chatMutation.mutate({
-      document_id: selectedDocument,
-      conversation_id:
-        activeConversationId,
-      question: question.trim(),
-    });
+    if (!question.trim()) {
+      setError("Please enter a question.");
+      return;
+    }
 
-  } catch (error) {
-    console.error(
-      "Failed to create conversation:",
-      error
+    if (isStreaming) {
+      return;
+    }
+
+    setAnswer("");
+    setError(null);
+    setIsStreaming(true);
+
+    await streamQuestion(
+      question.trim(),
+      {
+        onToken: (token) => {
+          console.log("TOKEN:", token);
+
+          setAnswer((previous) => {
+            return previous + token;
+          });
+        },
+
+        onDone: () => {
+          console.log("STREAM DONE");
+
+          setIsStreaming(false);
+        },
+
+        onError: (message) => {
+          console.error(
+            "STREAM ERROR:",
+            message
+          );
+
+          setError(message);
+          setIsStreaming(false);
+        },
+      }
     );
-  }
-};
+  };
 
   return (
     <div className="space-y-6">
@@ -112,6 +90,7 @@ export default function ChatInterface() {
       {/* Document Selector */}
 
       <div className="space-y-2">
+
         <label
           htmlFor="document"
           className="text-sm font-medium"
@@ -123,15 +102,19 @@ export default function ChatInterface() {
           id="document"
           value={selectedDocument}
           onChange={(event) =>
-            setSelectedDocument(event.target.value)
+            setSelectedDocument(
+              event.target.value
+            )
           }
-          disabled={documentsLoading}
+          disabled={
+            documentsLoading ||
+            isStreaming
+          }
           className="w-full rounded-md border bg-background px-3 py-2"
         >
+
           <option value="">
-            {documentsLoading
-              ? "Loading documents..."
-              : "Select a document"}
+            Select a document
           </option>
 
           {documents?.map((document) => (
@@ -142,8 +125,11 @@ export default function ChatInterface() {
               {document.filename}
             </option>
           ))}
+
         </select>
+
       </div>
+
 
       {/* Question Form */}
 
@@ -151,6 +137,7 @@ export default function ChatInterface() {
         onSubmit={handleSubmit}
         className="space-y-3"
       >
+
         <label
           htmlFor="question"
           className="text-sm font-medium"
@@ -162,8 +149,11 @@ export default function ChatInterface() {
           id="question"
           value={question}
           onChange={(event) =>
-            setQuestion(event.target.value)
+            setQuestion(
+              event.target.value
+            )
           }
+          disabled={isStreaming}
           placeholder="Ask something about your document..."
           rows={4}
           className="w-full rounded-md border bg-background p-3"
@@ -172,93 +162,53 @@ export default function ChatInterface() {
         <button
           type="submit"
           disabled={
-            chatMutation.isPending ||
+            isStreaming ||
             !selectedDocument ||
             !question.trim()
           }
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
         >
-          {chatMutation.isPending
+          {isStreaming
             ? "Thinking..."
             : "Ask Question"}
         </button>
+
       </form>
+
 
       {/* Error */}
 
-      {chatMutation.isError && (
+      {error && (
         <div className="rounded-md border border-red-200 p-4 text-red-600">
-          Failed to get an answer. Please try again.
+          {error}
         </div>
       )}
 
-      {/* Response */}
 
-      {response && response.success && (
-        <div className="space-y-6">
+      {/* Answer */}
 
-          {/* Answer */}
+      {(answer || isStreaming) && (
+        <div className="rounded-lg border p-6">
 
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-3 text-lg font-semibold">
-              Answer
-            </h2>
+          <h2 className="mb-3 text-lg font-semibold">
+            Answer
+          </h2>
 
-            <p className="whitespace-pre-wrap text-sm leading-7">
-              {response.data.answer}
-            </p>
-          </div>
+          <p className="whitespace-pre-wrap text-sm leading-7">
 
-          {/* Retrieval Information */}
+            {answer}
 
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-lg font-semibold">
-              Retrieval Information
-            </h2>
+            {isStreaming && (
+              <span className="ml-1 animate-pulse">
+                ▌
+              </span>
+            )}
 
-            <p className="text-sm text-muted-foreground">
-              Retrieved{" "}
-              <span className="font-medium text-foreground">
-                {response.data.retrieved_chunks}
-              </span>{" "}
-              relevant chunks.
-            </p>
-          </div>
-
-          {/* Sources */}
-
-          {response.data.sources?.length > 0 && (
-            <div className="rounded-lg border p-6">
-              <h2 className="mb-4 text-lg font-semibold">
-                Sources
-              </h2>
-
-              <div className="space-y-4">
-                {response.data.sources.map(
-                  (source) => (
-                    <div
-                      key={source.chunk_id}
-                      className="rounded-md bg-muted p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">
-                          Chunk {source.chunk_index}
-                        </span>
-
-                        <span className="text-xs text-muted-foreground">
-                          Score:{" "}
-                          {source.score.toFixed(3)}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          )}
+          </p>
 
         </div>
       )}
+
     </div>
   );
 }

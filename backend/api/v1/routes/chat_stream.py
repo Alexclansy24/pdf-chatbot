@@ -1,6 +1,9 @@
 from asyncio import sleep
 
-from fastapi import APIRouter
+from fastapi import (
+    APIRouter,
+    Depends,
+)
 
 from sse_starlette.sse import (
     EventSourceResponse,
@@ -13,6 +16,10 @@ from pydantic import BaseModel
 from services.llm.streaming import (
     stream_text,
 )
+from services.auth.dependencies import (
+    get_current_user,
+)
+from database.models.user import User
 
 router = APIRouter(
     prefix="/chat-stream",
@@ -60,16 +67,24 @@ async def token_stream(
     question: str,
 ):
 
-    async for token in stream_text(
-        question
-    ):
+    async def generate():
+
+        async for token in stream_text(
+            question
+        ):
+
+            yield {
+                "event": "token",
+                "data": token,
+            }
+
 
         yield {
-            "event": "token",
-            "data": token,
+            "event": "done",
+            "data": "complete",
         }
 
-    yield {
-        "event": "done",
-        "data": "complete",
-    }
+
+    return EventSourceResponse(
+        generate()
+    )

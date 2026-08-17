@@ -1,3 +1,4 @@
+from langsmith import traceable
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from core.config import settings
@@ -10,20 +11,22 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.1,
 )
 
+def _extract_text(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                parts.append(block.get("text", ""))
+        return "".join(parts)
+    return ""
 
-async def generate_node(
-    state: RAGState,
-):
-
-    # No relevant chunks found
+async def generate_node(state: RAGState):
     if state["retrieved_chunks"] == 0:
-
-        return {
-            "answer": (
-                "I could not find that information "
-                "in the uploaded document."
-            )
-        }
+        return {"answer": "I could not find that information in the uploaded document."}
 
     prompt = f"""
 You are a PDF question-answering assistant.
@@ -54,8 +57,7 @@ USER QUESTION:
 ANSWER:
 """
 
-    response = await llm.ainvoke(prompt)
-
-    return {
-        "answer": response.content
-    }
+    full = ""
+    async for chunk in llm.astream(prompt):
+        full += _extract_text(chunk.content)
+    return {"answer": full}

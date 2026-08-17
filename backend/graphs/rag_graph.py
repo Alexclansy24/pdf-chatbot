@@ -33,57 +33,57 @@ builder = StateGraph(
 )
 
 builder.add_node(
-    "retrieve",
+    "Retrieve",
     retrieve_node,
 )
 
 builder.add_node(
-    "validate",
+    "Validate",
     validate_node,
 )
 
 builder.add_node(
-    "generate",
+    "Generate",
     generate_node,
 )
 
 builder.add_node(
-    "respond",
+    "Respond",
     response_node,
 )
 
 builder.add_node(
-    "history",
+    "History",
     history_node,
 )
 
 builder.add_edge(
     START,
-    "history",
+    "History",
 )
 
 builder.add_edge(
-    "history",
-    "retrieve",
+    "History",
+    "Retrieve",
 )
 
 builder.add_edge(
-    "retrieve",
-    "validate",
+    "Retrieve",
+    "Validate",
 )
 
 builder.add_edge(
-    "validate",
-    "generate",
+    "Validate",
+    "Generate",
 )
 
 builder.add_edge(
-    "generate",
-    "respond",
+    "Generate",
+    "Respond",
 )
 
 builder.add_edge(
-    "respond",
+    "Respond",
     END,
 )
 

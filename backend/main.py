@@ -1,12 +1,13 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.v1.router import api_router
 from core.config import settings
 from core.logging import configure_logging
-from vectorstore.collections import (
-    CollectionManager,
-)
+from vectorstore.collections import CollectionManager
 
 configure_logging()
 

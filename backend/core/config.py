@@ -20,6 +20,10 @@ class Settings(BaseSettings):
 
     DEBUG: bool = True
 
+    LANGSMITH_TRACING: bool = False
+    LANGSMITH_API_KEY: str | None = None
+    LANGSMITH_PROJECT: str = "pdf-chatbot"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

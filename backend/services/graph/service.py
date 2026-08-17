@@ -1,3 +1,5 @@
+from langsmith._openapi_client.types import run_select_field
+from langsmith import traceable
 from database.models.enums import MessageRole
 import json
 from uuid import UUID
@@ -7,12 +9,25 @@ from services.retrieval.service import RetrievalService
 from services.llm.streaming import stream_text
 from services.messages.repository import MessageRepository
 
+def _extract_text(content) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for block in content:
+                if isinstance(block, str):
+                    parts.append(block)
+                elif isinstance(block, dict):
+                    parts.append(block.get("text", ""))
+            return "".join(parts)
+        return ""
 
 class GraphService:
 
     def __init__(self):
         self.retriever = RetrievalService()
         self.messages = MessageRepository()
+
 
     async def ask(
         self,
@@ -57,113 +72,34 @@ class GraphService:
         async for event in rag_graph.astream(state):
             yield event
 
-    async def stream_pdf_answer(
-    self,
-    document_id: str,
-    question: str,
-    conversation_id: UUID,
-    user_id: UUID,
-    ):
-        await self.messages.create(
-        conversation_id=conversation_id,
-        role=MessageRole.USER,
-        content=question,
-    )
-        
 
-        results = await self.retriever.retrieve(
-            query=question,
-            limit=5,
-            document_id=document_id,
-        )
+    async def stream_pdf_answer(self, document_id, question, conversation_id, user_id):
+        await self.messages.create(conversation_id=conversation_id, role=MessageRole.USER, content=question)
 
-        contexts = []
-        sources = []
-
-        for point in results.points:
-            payload = point.payload
-
-            contexts.append(
-                payload.get("content", "")
-            )
-
-        sources.append(
-            {
-                "document_id": payload.get(
-                    "document_id"
-                ),
-                "chunk_id": payload.get(
-                    "chunk_id"
-                ),
-                "chunk_index": payload.get(
-                    "chunk_index"
-                ),
-                "score": point.score,
-            }
-        )
-
-        context = "\n\n".join(contexts)
-
-        if not contexts:
-            answer = (
-            "I could not find relevant "
-            "information in the uploaded document."
-        )
-
-            await self.messages.create(
-            conversation_id=conversation_id,
-            role=MessageRole.ASSISTANT,
-            content=answer,
-            )
-        
-            yield {
-                "event": "token",
-                "data": answer,
-            }
-
-            yield {
-                "event": "done",
-                "data": "complete",
-            }
-
-            return
-
-        prompt = f"""
-        You are a PDF assistant.
-
-        Answer ONLY using the provided context.
-
-        If the answer is not present in the context,
-        say that you could not find the information
-        in the uploaded document.
-
-        Context:
-        {context}
-
-        Question:
-        {question}
-        """
+        state = {
+            "question": question, "context": "", "answer": "",
+            "retrieved_chunks": 0, "sources": [],
+            "conversation_id": str(conversation_id), "document_id": document_id,
+            "chat_history": "",
+        }
 
         full_answer = ""
-        async for token in stream_text(prompt):
-            full_answer += token
-            yield {
-                "type": "token",
-                "data": token,
-            }
+        sources = []
 
-            await self.messages.create(
-                conversation_id=conversation_id,
-                role=MessageRole.ASSISTANT,
-                content=token,
-            )
+        async for event in rag_graph.astream_events(
+            state, version="v2", config={"run_name": "pdf_rag_stream"}
+        ):
+            kind = event["event"]
 
-        yield {
-            "type": "sources",
-            "data": sources,
-        }
+            if kind == "on_chat_model_stream":
+                token = _extract_text(event["data"]["chunk"].content)
+                if token:
+                    full_answer += token
+                    yield {"type": "token", "data": token}
 
-        yield {
-            "type": "done",
-            "data": "complete",
-        }
+            elif kind == "on_chain_end" and event.get("name") == "retrieve":
+                sources = event["data"]["output"].get("sources", [])
+
+        await self.messages.create(conversation_id=conversation_id, role=MessageRole.ASSISTANT, content=full_answer)
+        yield {"type": "sources", "data": sources}
+        yield {"type": "done", "data": "complete"}

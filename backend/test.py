@@ -1,23 +1,20 @@
 import asyncio
 
-from services.auth.schemas import LoginRequest
-from services.auth.service import AuthService
-from services.users.repository import UserRepository
+from services.graph.service import GraphService
 
 
 async def main():
-    service = AuthService(
-        repository=UserRepository(),
-    )
 
-    token = await service.login(
-        LoginRequest(
-            email="alex123@example.com",
-            password="hello123",
-        )
-    )
+    service = GraphService()
 
-    print(token)
+    async for event in service.stream_answer(
+        question="what are the skills?",
+        conversation_id=None,
+        document_id="294a9221-70c9-48f0-8b97-ec360b20720a",
+    ):
+        print("\nEVENT:")
+        print(event)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

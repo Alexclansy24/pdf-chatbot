@@ -1,6 +1,3 @@
-////////****IMPORTANT CLOUDFLARE R2 IS STILL IN WORK\\\\\\\\\\\\\\\\\\\\\\\\
-
-
 /////////HOW TO SETUP////////////
 
 1. Clone the project
@@ -30,7 +27,7 @@ DATABASE_URL=postgresql+asyncpg://<username>:<password>@<host>/<database>
 GEMINI_API_KEY=<your-gemini-api-key>
 
 # Qdrant
-QDRANT_URL=http://localhost:6333
+QDRANT_URL=http://qdrant:6333
 QDRANT_COLLECTION=documents
 
 # JWT
@@ -38,12 +35,6 @@ JWT_SECRET_KEY=<your-secret-key>
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-# Cloudflare R2
-R2_ACCOUNT_ID=<your-account-id>
-R2_ACCESS_KEY_ID=<your-access-key>
-R2_SECRET_ACCESS_KEY=<your-secret-key>
-R2_BUCKET_NAME=<your-bucket-name>
-R2_ENDPOINT=<your-r2-endpoint>
 
 # LangSmith
 LANGCHAIN_TRACING_V2=true
@@ -51,6 +42,9 @@ LANGCHAIN_API_KEY=<your-langsmith-api-key>
 LANGCHAIN_PROJECT=pdf-chatbot
 
 Keep .env out of Git. Add .env to .gitignore.
+
+try to run - docker compose up --build
+and if it runs successfully then jump to step 6.
 
 3. Start Qdrant
 docker run -d ^
@@ -85,7 +79,6 @@ Before running the complete application, make sure these are available:
 PostgreSQL (Neon)
 Gemini API
 Qdrant
-Cloudflare R2
 LangSmith
 
 
@@ -112,7 +105,6 @@ The project uses RAG (Retrieval-Augmented Generation) to find relevant informati
 - Gemini — Embeddings and LLM
 - LangChain — AI/RAG utilities
 - LangGraph — RAG workflow
-- Cloudflare R2 — PDF file storage
 - LangSmith — AI tracing and monitoring
 - Docker — Deployment and containerization
 
@@ -130,8 +122,6 @@ FastAPI
  ├── PostgreSQL
  │     └── Users, Documents, Conversations, Messages
  │
- ├── Cloudflare R2
- │     └── PDF Files
  │
  ├── Qdrant
  │     └── Document Embeddings
@@ -197,7 +187,6 @@ Multi-document support
 Streaming AI responses
 Source references
 Authentication
-Cloud storage
 AI observability
 Docker deployment
 
